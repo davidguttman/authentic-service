@@ -33,6 +33,12 @@ http.createServer(function (req, res) {
 console.log('Protected microservice listening on port', 1338)
 ```
 
+## Installation ##
+
+```
+npm install --save authentic-service
+```
+
 ## API ##
 
 ### Authentic(opts) ###
