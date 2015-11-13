@@ -1,6 +1,11 @@
 var jsonist = require('jsonist')
+var Corsify = require('corsify')
 var jwt = require('jsonwebtoken')
 var AsyncCache = require('async-cache')
+
+var cors = Corsify({
+  'Access-Control-Allow-Headers': 'authorization, accept, content-type'
+})
 
 var Service = module.exports = function (opts) {
   var prefix = opts.prefix || '/auth'
@@ -15,11 +20,12 @@ var Service = module.exports = function (opts) {
   }
 
   function parseRequest (req, res, cb) {
-    if (!cb) cb = res
-    var authHeader = req.headers.authorization
-    if (!authHeader) return setImmediate(cb)
-    var token = authHeader.slice(7)
-    decode(token, cb)
+    cors(function (req, res) {
+      var authHeader = req.headers.authorization
+      if (!authHeader) return setImmediate(cb)
+      var token = authHeader.slice(7)
+      decode(token, cb)
+    })(req, res)
   }
 
   return parseRequest
