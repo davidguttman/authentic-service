@@ -24,7 +24,10 @@ var Service = module.exports = function (opts) {
       var authHeader = req.headers.authorization
       if (!authHeader) return setImmediate(cb)
       var token = authHeader.slice(7)
-      decode(token, cb)
+      decode(token, function (err) {
+        if (err && err.name === 'TokenExpiredError') err.statusCode = 401
+        cb(err)
+      })
     })(req, res)
   }
 
