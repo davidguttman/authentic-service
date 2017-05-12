@@ -34,5 +34,8 @@
   "bugs": {
     "url": "https://github.com/davidguttman/authentic-service/issues"
   },
+  "contributors": [
+    "Arandjel Sarenac <arandjel.sarenac@gmail.com> @big-kahuna-burger"
+  ],
   "homepage": "https://github.com/davidguttman/authentic-service#readme"
 }

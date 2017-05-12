@@ -43,6 +43,93 @@ tape('should handle anonymous request', function (t) {
   })
 })
 
+tape('should handle bad jwt', function (t) {
+  var opts = {
+    method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + 'not a jwt'
+    }
+  }
+  servertest(createService(auth), '/', opts, function (err, res) {
+    t.ifErr(err, 'should not error on bad token')
+
+    var parsed = JSON.parse(res.body.toString())
+    t.deepEqual(parsed, {
+      message: 'jwt malformed',
+      name: 'JsonWebTokenError',
+      statusCode: 401
+    }, 'should have correct error')
+    t.end()
+  })
+})
+
+tape('should handle missing token error', function (t) {
+  var opts = {
+    method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + ''
+    }
+  }
+  servertest(createService(auth), '/', opts, function (err, res) {
+    t.ifErr(err, 'should not error on bad token')
+
+    var parsed = JSON.parse(res.body.toString())
+    t.deepEqual(parsed, {
+      message: 'jwt must be provided',
+      name: 'JsonWebTokenError',
+      statusCode: 401
+    }, 'should have correct error')
+    t.end()
+  })
+})
+
+tape('should handle \'TokenExpiredError\'', function (t) {
+  var payload = { email: 'chet@scalehaus.io' }
+  var soonToExpireToken = jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '1' })
+  var opts = {
+    method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + soonToExpireToken
+    }
+  }
+  var serviceInstance = createService(auth)
+  setTimeout(function test () {
+    servertest(serviceInstance, '/', opts, function (err, res) {
+      t.ifErr(err, 'should not error on expired jwt')
+
+      var parsed = JSON.parse(res.body.toString())
+      t.equal(parsed.statusCode, 401, 'status code matches')
+      t.equal(parsed.message, 'jwt expired', 'should have correct message')
+      t.equal(parsed.name, 'TokenExpiredError', 'should have correct name')
+      t.end()
+    })
+  }, 5)
+})
+
+tape('should handle \'NotBeforeError\'', function (t) {
+  var nbf = new Date().getTime() + 10000
+  var payload = { email: 'chet@scalehaus.io', nbf }
+  var soonToExpireToken = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
+  var opts = {
+    method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + soonToExpireToken
+    }
+  }
+  var serviceInstance = createService(auth)
+  setTimeout(function test () {
+    servertest(serviceInstance, '/', opts, function (err, res) {
+      t.ifErr(err, 'should not error on expired jwt')
+
+      var parsed = JSON.parse(res.body.toString())
+      t.equal(parsed.statusCode, 401, 'status code matches')
+      t.equal(parsed.message, 'jwt not active', 'should have correct message')
+      t.equal(parsed.name, 'NotBeforeError', 'should have correct name')
+      t.end()
+    })
+  }, 5)
+})
+
 tape('should handle auth token', function (t) {
   var opts = {method: 'GET', headers: {
     Authorization: 'Bearer ' + token
@@ -68,8 +155,12 @@ tape('cleanup', function (t) {
 function createService (auth) {
   return http.createServer(function (req, res) {
     auth(req, res, function (err, authData) {
-      if (err) return console.error(err)
-      res.writeHead(200, {'Content-Type': 'application/json'})
+      if (err) {
+        err.stack = undefined
+        res.writeHead(err.statusCode, { 'Content-Type': 'application/json' })
+        return res.end(JSON.stringify(err))
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(authData || null))
     })
   })
