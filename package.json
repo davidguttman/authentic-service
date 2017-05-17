@@ -1,6 +1,6 @@
 {
   "name": "authentic-service",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "This is the service component of Authentic. This will help decode tokens so that you can authenticate users within a microservice.",
   "main": "index.js",
   "scripts": {
