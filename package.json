@@ -14,14 +14,14 @@
   "author": "David Guttman <david@guttman.io> (http://davidguttman.com/)",
   "license": "MIT",
   "dependencies": {
-    "async-cache": "^1.0.0",
+    "async-cache": "^1.1.0",
     "corsify": "^2.1.0",
-    "jsonist": "^1.3.0",
-    "jsonwebtoken": "^5.4.1"
+    "jsonist": "^2.1.0",
+    "jsonwebtoken": "^7.4.1"
   },
   "devDependencies": {
     "servertest": "^1.2.1",
-    "tape": "^4.2.2"
+    "tape": "^4.6.3"
   },
   "directories": {
     "example": "example",
