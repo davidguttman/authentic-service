@@ -3,6 +3,12 @@ var Corsify = require('corsify')
 var jwt = require('jsonwebtoken')
 var AsyncCache = require('async-cache')
 
+var errors = {
+  'TokenExpiredError': 401,
+  'JsonWebTokenError': 401,
+  'NotBeforeError': 401
+}
+
 var cors = Corsify({
   'Access-Control-Allow-Headers': 'authorization, accept, content-type'
 })
@@ -25,8 +31,8 @@ var Service = module.exports = function (opts) {
       if (!authHeader) return setImmediate(cb)
       var token = authHeader.slice(7)
       decode(token, function (err, authData) {
-        if (err && err.name === 'TokenExpiredError') err.statusCode = 401
-        cb(err, authData)
+        if (err) err.statusCode = errors[err.name] || 500
+        return cb(err, authData)
       })
     })(req, res)
   }
