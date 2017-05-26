@@ -13,7 +13,7 @@ var cors = Corsify({
   'Access-Control-Allow-Headers': 'authorization, accept, content-type'
 })
 
-var Service = module.exports = function (opts) {
+module.exports = function (opts) {
   var prefix = opts.prefix || '/auth'
   var pubKeyUrl = opts.server + prefix + '/public-key'
   var cache = createCache(pubKeyUrl, opts.cacheDuration)
@@ -21,7 +21,7 @@ var Service = module.exports = function (opts) {
   function decode (token, cb) {
     cache.get('pubKey', function (err, pubKey) {
       if (err) return cb(err)
-      jwt.verify(token, pubKey, {algorithms: ['RS256']}, cb)
+      jwt.verify(token, pubKey, { algorithms: ['RS256'] }, cb)
     })
   }
 
@@ -48,7 +48,7 @@ function createCache (pubKeyUrl, cacheDuration) {
       jsonist.get(pubKeyUrl, function (err, body) {
         if (err) return cb(err)
 
-        var pubKey = ((body||{}).data||{}).publicKey
+        var pubKey = ((body || {}).data || {}).publicKey
         if (!pubKey) return cb(new Error('Could not retrieve public key'))
 
         cb(null, pubKey)

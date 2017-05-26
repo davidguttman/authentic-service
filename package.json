@@ -4,7 +4,7 @@
   "description": "This is the service component of Authentic. This will help decode tokens so that you can authenticate users within a microservice.",
   "main": "index.js",
   "scripts": {
-    "test": "node test/index.js"
+    "test": "node test/index.js && standard"
   },
   "keywords": [
     "authentic",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "servertest": "^1.2.1",
+    "standard": "^10.0.2",
     "tape": "^4.6.3"
   },
   "directories": {
