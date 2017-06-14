@@ -1,11 +1,12 @@
 var fs = require('fs')
 var http = require('http')
-var tape = require('tape')
-var servertest = require('servertest')
 var jwt = require('jsonwebtoken')
+var path = require('path')
+var servertest = require('servertest')
+var tape = require('tape')
 
-var publicKey = fs.readFileSync(__dirname + '/rsa-public.pem', 'utf-8')
-var privateKey = fs.readFileSync(__dirname + '/rsa-private.pem', 'utf-8')
+var publicKey = fs.readFileSync(path.join(__dirname, '/rsa-public.pem'), 'utf-8')
+var privateKey = fs.readFileSync(path.join(__dirname, '/rsa-private.pem'), 'utf-8')
 
 var Authentic = require('../')
 
@@ -19,8 +20,8 @@ tape('init', function (t) {
   server = http.createServer(function (req, res) {
     if (req.url !== '/auth/public-key') return
     res.end(JSON.stringify({
-      "success": true,
-      "data": { "publicKey": publicKey }
+      'success': true,
+      'data': { 'publicKey': publicKey }
     }))
   })
 
@@ -131,9 +132,10 @@ tape('should handle \'NotBeforeError\'', function (t) {
 })
 
 tape('should handle auth token', function (t) {
-  var opts = {method: 'GET', headers: {
-    Authorization: 'Bearer ' + token
-  }}
+  var opts = {method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + token
+    }}
 
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifError(err, 'should not error')
