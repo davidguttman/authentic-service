@@ -13,9 +13,6 @@ var Authentic = require('../')
 var server = null
 var auth = null
 
-var payload = {email: 'chet@scalehaus.io', expiresIn: '30d'}
-var token = jwt.sign(payload, privateKey, {algorithm: 'RS256'})
-
 tape('init', function (t) {
   server = http.createServer(function (req, res) {
     if (req.url !== '/auth/public-key') return
@@ -132,18 +129,25 @@ tape('should handle \'NotBeforeError\'', function (t) {
 })
 
 tape('should handle auth token', function (t) {
-  var opts = {method: 'GET',
+  var now = ~~(new Date().getTime() / 1000)
+  var payload = { email: 'chet@scalehaus.io' }
+  var token = jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '30d' })
+  var opts = {
+    method: 'GET',
     headers: {
       Authorization: 'Bearer ' + token
-    }}
+    }
+  }
 
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifError(err, 'should not error')
     var data = JSON.parse(res.body)
 
     t.equal(data.email, 'chet@scalehaus.io', 'should have correct email')
-    t.equal(data.expiresIn, '30d', 'should have correct expiresIn')
-    t.ok(data.iat, 'chet@scalehaus.io', 'should have iat')
+    var expectedExpiry = now + 2592000
+    t.equal(data.exp, expectedExpiry, 'should have correct expiresIn')
+    var expectedIssuedAt = now
+    t.equal(data.iat, expectedIssuedAt, 'should have correct iat')
 
     t.end()
   })
