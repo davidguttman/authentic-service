@@ -1,28 +1,36 @@
-var fs = require('fs')
-var http = require('http')
-var jwt = require('jsonwebtoken')
-var path = require('path')
-var servertest = require('dg-servertest')
-var tape = require('tape')
+const fs = require('fs')
+const http = require('http')
+const jwt = require('jsonwebtoken')
+const path = require('path')
+const servertest = require('dg-servertest')
+const tape = require('tape')
 
-var publicKey = fs.readFileSync(path.join(__dirname, '/rsa-public.pem'), 'utf-8')
-var privateKey = fs.readFileSync(path.join(__dirname, '/rsa-private.pem'), 'utf-8')
+const publicKey = fs.readFileSync(
+  path.join(__dirname, '/rsa-public.pem'),
+  'utf-8'
+)
+const privateKey = fs.readFileSync(
+  path.join(__dirname, '/rsa-private.pem'),
+  'utf-8'
+)
 
-var Authentic = require('../')
+const Authentic = require('../')
 
-var server = null
-var auth = null
+let server = null
+let auth = null
 
-var payload = {email: 'chet@scalehaus.io', expiresIn: '30d'}
-var token = jwt.sign(payload, privateKey, {algorithm: 'RS256'})
+const payload = { email: 'chet@scalehaus.io', expiresIn: '30d' }
+const token = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
 
 tape('init', function (t) {
   server = http.createServer(function (req, res) {
     if (req.url !== '/auth/public-key') return
-    res.end(JSON.stringify({
-      'success': true,
-      'data': { 'publicKey': publicKey }
-    }))
+    res.end(
+      JSON.stringify({
+        success: true,
+        data: { publicKey }
+      })
+    )
   })
 
   server.listen(0, function (err) {
@@ -35,17 +43,17 @@ tape('init', function (t) {
 })
 
 tape('should handle anonymous request', function (t) {
-  var opts = {method: 'GET'}
+  const opts = { method: 'GET' }
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifError(err, 'should not error')
-    var data = JSON.parse(res.body)
+    const data = JSON.parse(res.body)
     t.equal(data, null, 'should not have authData')
     t.end()
   })
 })
 
 tape('should handle bad jwt', function (t) {
-  var opts = {
+  const opts = {
     method: 'GET',
     headers: {
       Authorization: 'Bearer ' + 'not a jwt'
@@ -54,18 +62,22 @@ tape('should handle bad jwt', function (t) {
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifErr(err, 'should not error on bad token')
 
-    var parsed = JSON.parse(res.body.toString())
-    t.deepEqual(parsed, {
-      message: 'jwt malformed',
-      name: 'JsonWebTokenError',
-      statusCode: 401
-    }, 'should have correct error')
+    const parsed = JSON.parse(res.body.toString())
+    t.deepEqual(
+      parsed,
+      {
+        message: 'jwt malformed',
+        name: 'JsonWebTokenError',
+        statusCode: 401
+      },
+      'should have correct error'
+    )
     t.end()
   })
 })
 
 tape('should handle missing token error', function (t) {
-  var opts = {
+  const opts = {
     method: 'GET',
     headers: {
       Authorization: 'Bearer ' + ''
@@ -74,31 +86,38 @@ tape('should handle missing token error', function (t) {
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifErr(err, 'should not error on bad token')
 
-    var parsed = JSON.parse(res.body.toString())
-    t.deepEqual(parsed, {
-      message: 'jwt must be provided',
-      name: 'JsonWebTokenError',
-      statusCode: 401
-    }, 'should have correct error')
+    const parsed = JSON.parse(res.body.toString())
+    t.deepEqual(
+      parsed,
+      {
+        message: 'jwt must be provided',
+        name: 'JsonWebTokenError',
+        statusCode: 401
+      },
+      'should have correct error'
+    )
     t.end()
   })
 })
 
-tape('should handle \'TokenExpiredError\'', function (t) {
-  var payload = { email: 'chet@scalehaus.io' }
-  var soonToExpireToken = jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '1' })
-  var opts = {
+tape("should handle 'TokenExpiredError'", function (t) {
+  const payload = { email: 'chet@scalehaus.io' }
+  const soonToExpireToken = jwt.sign(payload, privateKey, {
+    algorithm: 'RS256',
+    expiresIn: '1'
+  })
+  const opts = {
     method: 'GET',
     headers: {
       Authorization: 'Bearer ' + soonToExpireToken
     }
   }
-  var serviceInstance = createService(auth)
+  const serviceInstance = createService(auth)
   setTimeout(function test () {
     servertest(serviceInstance, '/', opts, function (err, res) {
       t.ifErr(err, 'should not error on expired jwt')
 
-      var parsed = JSON.parse(res.body.toString())
+      const parsed = JSON.parse(res.body.toString())
       t.equal(parsed.statusCode, 401, 'status code matches')
       t.equal(parsed.message, 'jwt expired', 'should have correct message')
       t.equal(parsed.name, 'TokenExpiredError', 'should have correct name')
@@ -107,22 +126,24 @@ tape('should handle \'TokenExpiredError\'', function (t) {
   }, 5)
 })
 
-tape('should handle \'NotBeforeError\'', function (t) {
-  var nbf = new Date().getTime() + 10000
-  var payload = { email: 'chet@scalehaus.io', nbf }
-  var soonToExpireToken = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
-  var opts = {
+tape("should handle 'NotBeforeError'", function (t) {
+  const nbf = new Date().getTime() + 10000
+  const payload = { email: 'chet@scalehaus.io', nbf }
+  const soonToExpireToken = jwt.sign(payload, privateKey, {
+    algorithm: 'RS256'
+  })
+  const opts = {
     method: 'GET',
     headers: {
       Authorization: 'Bearer ' + soonToExpireToken
     }
   }
-  var serviceInstance = createService(auth)
+  const serviceInstance = createService(auth)
   setTimeout(function test () {
     servertest(serviceInstance, '/', opts, function (err, res) {
       t.ifErr(err, 'should not error on expired jwt')
 
-      var parsed = JSON.parse(res.body.toString())
+      const parsed = JSON.parse(res.body.toString())
       t.equal(parsed.statusCode, 401, 'status code matches')
       t.equal(parsed.message, 'jwt not active', 'should have correct message')
       t.equal(parsed.name, 'NotBeforeError', 'should have correct name')
@@ -132,14 +153,16 @@ tape('should handle \'NotBeforeError\'', function (t) {
 })
 
 tape('should handle auth token', function (t) {
-  var opts = {method: 'GET',
+  const opts = {
+    method: 'GET',
     headers: {
       Authorization: 'Bearer ' + token
-    }}
+    }
+  }
 
   servertest(createService(auth), '/', opts, function (err, res) {
     t.ifError(err, 'should not error')
-    var data = JSON.parse(res.body)
+    const data = JSON.parse(res.body)
 
     t.equal(data.email, 'chet@scalehaus.io', 'should have correct email')
     t.equal(data.expiresIn, '30d', 'should have correct expiresIn')
