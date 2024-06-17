@@ -2,7 +2,7 @@ var fs = require('fs')
 var http = require('http')
 var jwt = require('jsonwebtoken')
 var path = require('path')
-var servertest = require('servertest')
+var servertest = require('dg-servertest')
 var tape = require('tape')
 
 var publicKey = fs.readFileSync(path.join(__dirname, '/rsa-public.pem'), 'utf-8')
