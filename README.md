@@ -5,10 +5,10 @@ This is the service component of [authentic](https://github.com/davidguttman/aut
 ## Example ##
 
 ```js
-var http = require('http')
-var Authentic = require('authentic-service')
+const http = require('http')
+const Authentic = require('authentic-service')
 
-var auth = Authentic({
+const auth = Authentic({
   server: 'https://auth.scalehaus.io'
 })
 
@@ -46,7 +46,7 @@ npm install --save authentic-service
 This is the main entry point. Accepts an options object and returns a function that can parse and decrypt tokens from http requests.
 
 ```js
-var auth = Authentic({
+const auth = Authentic({
   server: 'https://auth.scalehaus.io'
 })
 
@@ -64,6 +64,7 @@ Optional:
 
 * `prefix`: defaults to `'/auth'` if you set a custom prefix for your `authentic-server`, use that same prefix here
 * `cacheDuration`: defaults to `3600000` (1 hour in milliseconds). To minimize latency and requests, this is how long `authentic-service` will cache the `authentic-server` public key. 
+* `checkExpiredList`: will check email against the expired list on `authentic-server`, this will reject any token issued before a remote expiration (e.g. password change). This feature must also be enabled on `authentic-server`.
 
 # License #
 

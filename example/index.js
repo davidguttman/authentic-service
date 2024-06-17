@@ -2,7 +2,8 @@ const http = require('http')
 const Authentic = require('../')
 
 const auth = Authentic({
-  server: 'https://auth.scalehaus.io'
+  server: 'https://auth.scalehaus.io',
+  checkExpiredList: true
 })
 
 http

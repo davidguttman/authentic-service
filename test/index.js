@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const path = require('path')
 const servertest = require('dg-servertest')
 const tape = require('tape')
+const crypto = require('crypto')
 
 const publicKey = fs.readFileSync(
   path.join(__dirname, '/rsa-public.pem'),
@@ -16,6 +17,12 @@ const privateKey = fs.readFileSync(
 
 const Authentic = require('../')
 
+const EXPIRED_EMAIL = 'expired@scalehaus.io'
+const EXPIRED_HASH = crypto
+  .createHash('sha256')
+  .update(EXPIRED_EMAIL)
+  .digest('hex')
+
 let server = null
 let auth = null
 
@@ -24,19 +31,27 @@ const token = jwt.sign(payload, privateKey, { algorithm: 'RS256' })
 
 tape('init', function (t) {
   server = http.createServer(function (req, res) {
-    if (req.url !== '/auth/public-key') return
-    res.end(
-      JSON.stringify({
-        success: true,
-        data: { publicKey }
-      })
-    )
+    if (req.url === '/auth/public-key') {
+      return res.end(
+        JSON.stringify({
+          success: true,
+          data: { publicKey }
+        })
+      )
+    }
+
+    if (req.url === '/auth/expired') {
+      return res.end(JSON.stringify({
+        [EXPIRED_HASH]: Math.floor((Date.now() + (60 * 60 * 1000)) / 1000)
+      }))
+    }
   })
 
   server.listen(0, function (err) {
     if (err) return console.error(err)
     auth = Authentic({
-      server: 'http://localhost:' + this.address().port
+      server: 'http://localhost:' + this.address().port,
+      checkExpiredList: true
     })
     t.end()
   })
@@ -171,6 +186,31 @@ tape('should handle auth token', function (t) {
     t.end()
   })
 })
+
+tape(
+  'should reject token with issue time before expiry list time',
+  function (t) {
+    const payload = { email: EXPIRED_EMAIL }
+    const earlyIssuedToken = jwt.sign(payload, privateKey, {
+      algorithm: 'RS256'
+    })
+    const opts = {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer ' + earlyIssuedToken
+      }
+    }
+
+    servertest(createService(auth), '/', opts, function (err, res) {
+      t.ifErr(err, 'should not error due to early issue time')
+      const data = JSON.parse(res.body)
+      t.equal(data.statusCode, 401, 'should return 401 Unauthorized')
+      t.equal(data.message, 'jwt expired by remote', 'should have correct error message')
+
+      t.end()
+    })
+  }
+)
 
 tape('cleanup', function (t) {
   server.close()

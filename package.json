@@ -17,7 +17,8 @@
     "async-cache": "^1.1.0",
     "corsify": "^2.1.0",
     "jsonist": "^2.1.0",
-    "jsonwebtoken": "^7.4.1"
+    "jsonwebtoken": "^7.4.1",
+    "map-async": "^0.1.1"
   },
   "devDependencies": {
     "dg-servertest": "^1.2.2",
